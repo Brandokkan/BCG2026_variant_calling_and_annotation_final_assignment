@@ -66,17 +66,17 @@ for parent_folder in $parent_folders; do
 	echo $BAM_files | sort | sed "s/.bam//g" | sed "s/\s/\n/g" > $vcf_order_file_path  # file containing the names of the samples in alphabetical order used for consistent vcf filtering
 	type_of_inh_cur_line=$(grep $parent_folder_name $2) # the line in the MOI file that corresponds to the type of inheritance of the curent samples
 	if [[ $type_of_inh_cur_line == *AD_denovo* ]]; then # checks what is the type of inheritance and assigns the proper filter variable
-		toi_filter='GT[0]!="RR"'
+		toi_filter='(GT[0]="RA" | GT[0]="AR") && GT[1]="RR" && GT[2]="RR"'
 	elif [[ $type_of_inh_cur_line == *AD_inherited* ]]; then
 		if [[ $type_of_inh_cur_line == *mother_affected* ]]; then
-			toi_filter='GT[0]="RA" && GT[2]!="RR"'
+			toi_filter='(GT[0]="RA" | GT[0]="AR") && GT[2]!="RR" && GT[1]="RR"'
 		elif [[ $type_of_inh_cur_line == *father_affected* ]]; then
-			toi_filter='GT[0]="RA" && GT[1]!="RR"'
+			toi_filter='(GT[0]="RA" | GT[0]="AR") && GT[1]!="RR" && GT[2]="RR"'
 		else
-			toi_filter='GT[0]!="RR" && GT[1]!="RR" && GT[2]!="RR"'
+			toi_filter='(GT[0]="RA" | GT[0]="AR") && GT[1]!="RR" && GT[2]!="RR"'
 		fi
 	else
-		toi_filter='GT[0]="AA" && GT[1]!="RR" && GT[2]!="RR"'
+		toi_filter='GT[0]="AA" && (GT[1]="RA" | GT[1]="AR") && (GT[2]="RA" | GT[2]="AR")'
 	fi
 
 	# checks if the user selected the option to only study specific regions and runs the program accordingly
@@ -90,10 +90,10 @@ for parent_folder in $parent_folders; do
 	vep_name="${parent_folder_name}.vep" # name of the file that will contain the annotated variants using VEP
 	vep_path="${parent_folder}${vep_name}"
 	# variant annotation
-	vep -i $vcf_candidates_path -o $vep_path --vcf --cache --offline --assembly GRCh37 --dir_cache /data/vep_cache --use_given_ref --mane --pick_allele --af --af_1kg --af_gnomade --max_af --sift b --polyphen b
-
+	vep -i $vcf_candidates_path -o $vep_path --vcf --cache --offline --assembly GRCh38 --dir_cache /data/vep_cache --refseq --use_given_ref --mane --pick_allele --af --af_1kg --af_gnomade --max_af --sift b --polyphen b
 	vep_filtered_name="${parent_folder_name}_filtered.vep" # name of the file that will contain the candidates pathogenic variants
 	vep_filtered_path="${parent_folder}${vep_filtered_name}"
 	# filtering for field values that match with pathogenic variants
 	filter_vep -i $vep_path -o $vep_filtered_path --filter "(IMPACT is HIGH or (IMPACT is MODERATE and SIFT <= 0.05 and PolyPhen >= 0.15)) and (not MAX_AF or MAX_AF < 0.0001)"
+
 done
