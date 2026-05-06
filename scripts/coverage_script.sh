@@ -35,9 +35,10 @@ for parent_folder in $parent_folders; do
 
 	for BAM in $BAM_files; do # cycles through all BAM file names in the current directory
 		current_BAM_path="${parent_folder}${BAM}" # single BAM path of one of the BAM in the directory
-		track_desc="coverage track for ${BAM}" # variable containing the description to show in the UCSC genome browser
+		track_desc="'coverage track for ${BAM}'" # variable containing the description to show in the UCSC genome browser
+		output_bg_path=$(echo "${parent_folder}${BAM}_cov.bg" | sed "s/.bam//") # path of the bed graph file
 
 		# creation of the coverage profile for each BAM file
-		bedtools genomecov -ibam $current_BAM_path -bg -trackopts "type=bedGraph name=${BAM} description=${track_desc}" -max 100 > "${current_BAM_path}_cov.bg"
+		bedtools genomecov -ibam $current_BAM_path -bg -trackopts "name=${BAM} description=${track_desc}" -max 100 > $output_bg_path
 	done
 done
